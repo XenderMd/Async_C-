@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -26,16 +27,30 @@ namespace StockAnalyzer.Windows
         {
             BeforeLoadingStockData();
 
-            using (var client = new HttpClient()) {
-
-                var responseTask = client.GetAsync($"{API_URL}/{StockIdentifier.Text}");
-                var response = await responseTask;
-                var content = await response.Content.ReadAsStringAsync();
-                var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
-                Stocks.ItemsSource = data;
-            }
+            var getStocksTask =  GetStocks();
+            await getStocksTask;
 
             AfterLoadingStockData();
+        }
+
+        private async Task GetStocks()
+        {
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    var responseTask = client.GetAsync($"{API_URL}/{StockIdentifier.Text}");
+                    var response = await responseTask;
+                    var content = await response.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
+                    Stocks.ItemsSource = data;
+
+                }
+                catch (System.Exception ex)
+                {
+                    Notes.Text = ex.Message;
+                }
+            }
         }
 
 
