@@ -3,3 +3,6 @@
 02/StockAnalyzer.Windows/obj/
 02/StockAnalyzer.Core/obj/
 02/StockAnalyzer.Core/bin/
+02/StockAnalyzer.Web/bin/
+02/StockAnalyzer.Web/obj/
+*.suo
