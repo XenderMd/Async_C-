@@ -27,29 +27,31 @@ namespace StockAnalyzer.Windows
         {
             BeforeLoadingStockData();
 
-            var getStocksTask =  GetStocks();
-            await getStocksTask;
-
-            AfterLoadingStockData();
+            try
+            {
+                var getStocksTask = GetStocks();
+                var data = await getStocksTask;
+                Stocks.ItemsSource = data;
+            }
+            catch (System.Exception ex)
+            {
+                Notes.Text = ex.Message;
+            }
+            finally {
+                AfterLoadingStockData();
+            }
         }
 
-        private async Task GetStocks()
+        private async Task<IEnumerable<StockPrice>> GetStocks()
         {
             using (var client = new HttpClient())
             {
-                try
-                {
-                    var responseTask = client.GetAsync($"{API_URL}/{StockIdentifier.Text}");
-                    var response = await responseTask;
-                    var content = await response.Content.ReadAsStringAsync();
-                    var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
-                    Stocks.ItemsSource = data;
 
-                }
-                catch (System.Exception ex)
-                {
-                    Notes.Text = ex.Message;
-                }
+                var responseTask = client.GetAsync($"{API_URL}/{StockIdentifier.Text}");
+                var response = await responseTask;
+                var content = await response.Content.ReadAsStringAsync();
+                var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
+                return data;
             }
         }
 
