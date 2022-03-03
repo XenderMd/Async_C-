@@ -2,6 +2,8 @@
 using StockAnalyzer.Core.Domain;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -29,15 +31,31 @@ namespace StockAnalyzer.Windows
 
             try
             {
-                var getStocksTask = GetStocks();
-                var data = await getStocksTask;
-                Stocks.ItemsSource = data;
+                await Task.Run(() =>
+                  {
+                      var lines = File.ReadAllLines("./StockPrices_Small.csv");
+
+                      var data = new List<StockPrice>();
+
+                      foreach (var line in lines.Skip(1))
+                      {
+                          var price = StockPrice.FromCSV(line);
+                          data.Add(price);
+                      }
+
+                      Dispatcher.Invoke(() =>
+                      {
+                          Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
+                      });
+                  });
+
             }
             catch (System.Exception ex)
             {
                 Notes.Text = ex.Message;
             }
-            finally {
+            finally
+            {
                 AfterLoadingStockData();
             }
         }
