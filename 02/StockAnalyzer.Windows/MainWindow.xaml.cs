@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using StockAnalyzer.Core.Domain;
+using StockAnalyzer.Core.Services;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -38,57 +39,68 @@ namespace StockAnalyzer.Windows
             try
             {
                 cancellationTokenSource = new CancellationTokenSource();
-                cancellationTokenSource.Token.Register(() => {
+                cancellationTokenSource.Token.Register(() =>
+                {
                     Notes.Text = "Cancellation requested";
                 });
                 Search.Content = "Cancel";// Button text
                 BeforeLoadingStockData();
-                Task<List<string>> loadLinesTask = SearchForStocks(cancellationTokenSource.Token);
 
-                loadLinesTask.ContinueWith((task) =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        Notes.Text = task.Exception.InnerException.Message;
-                    });
-                }, TaskContinuationOptions.OnlyOnFaulted);
+                var service = new StockService();
+                var data = await service.GetStockPricesFor(StockIdentifier.Text, cancellationTokenSource.Token);
+                Stocks.ItemsSource = data;
 
-                var processStocksTask = loadLinesTask.ContinueWith((completedTask) =>
-                {
-                    var lines = completedTask.Result;
-                    var data = new List<StockPrice>();
+                //Task<List<string>> loadLinesTask = SearchForStocks(cancellationTokenSource.Token);
 
-                    foreach (var line in lines.Skip(1))
-                    {
-                        var price = StockPrice.FromCSV(line);
-                        data.Add(price);
-                    };
+                //loadLinesTask.ContinueWith((task) =>
+                //{
+                //    Dispatcher.Invoke(() =>
+                //    {
+                //        Notes.Text = task.Exception.InnerException.Message;
+                //    });
+                //}, TaskContinuationOptions.OnlyOnFaulted);
 
-                    //Queues code execution on the UI Thread
-                    Dispatcher.Invoke(() =>
-                    {
-                        Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
-                    });
-                },
-                                        cancellationTokenSource.Token,
-                                        TaskContinuationOptions.OnlyOnRanToCompletion,
-                                        TaskScheduler.Current
-                );
+                //var processStocksTask = loadLinesTask.ContinueWith((completedTask) =>
+                //{
+                //    var lines = completedTask.Result;
+                //    var data = new List<StockPrice>();
 
-                processStocksTask.ContinueWith(_ =>
-                {
-                    Dispatcher.Invoke(() =>
-                    {
-                        cancellationTokenSource = null;
-                        Search.Content = "Search";
-                        AfterLoadingStockData();
-                    });
-                });
+                //    foreach (var line in lines.Skip(1))
+                //    {
+                //        var price = StockPrice.FromCSV(line);
+                //        data.Add(price);
+                //    };
+
+                //    //Queues code execution on the UI Thread
+                //    Dispatcher.Invoke(() =>
+                //    {
+                //        Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
+                //    });
+                //},
+                //                        cancellationTokenSource.Token,
+                //                        TaskContinuationOptions.OnlyOnRanToCompletion,
+                //                        TaskScheduler.Current
+                //);
+
+                //processStocksTask.ContinueWith(_ =>
+                //{
+                //    Dispatcher.Invoke(() =>
+                //    {
+                //        cancellationTokenSource = null;
+                //        Search.Content = "Search";
+                //        AfterLoadingStockData();
+                //    });
+                //});
 
             }
             catch (System.Exception ex)
             {
                 Notes.Text = ex.Message;
+            }
+            finally {
+                cancellationTokenSource = null;
+                Search.Content = "Search";
+                AfterLoadingStockData();
             };
         }
 
