@@ -31,23 +31,34 @@ namespace StockAnalyzer.Windows
 
             try
             {
-                await Task.Run(() =>
+
+                var loadLinesTask = Task.Run(() =>
                   {
                       var lines = File.ReadAllLines("./StockPrices_Small.csv");
 
-                      var data = new List<StockPrice>();
-
-                      foreach (var line in lines.Skip(1))
-                      {
-                          var price = StockPrice.FromCSV(line);
-                          data.Add(price);
-                      }
-
-                      Dispatcher.Invoke(() =>
-                      {
-                          Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
-                      });
+                      return lines;
                   });
+
+                var processStocksTask = loadLinesTask.ContinueWith((completedTask) => {
+                    var lines = completedTask.Result;
+                    var data = new List<StockPrice>();
+
+                    foreach (var line in lines.Skip(1))
+                    {
+                        var price = StockPrice.FromCSV(line);
+                        data.Add(price);
+                    };
+
+                    //Queues code execution on the UI Thread
+                    Dispatcher.Invoke(() =>
+                    {
+                        Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
+                    });
+                });
+
+                processStocksTask.ContinueWith(_ => {
+                    Dispatcher.Invoke(() => { AfterLoadingStockData(); });
+                });
 
             }
             catch (System.Exception ex)
