@@ -32,12 +32,26 @@ namespace StockAnalyzer.Windows
             try
             {
 
-                var loadLinesTask = Task.Run(() =>
+                var loadLinesTask = Task.Run(async () =>
                   {
-                      var lines = File.ReadAllLines("./StockPrices_Small.csv");
+                      var lines = new List<string>();
 
-                      return lines;
-                  });
+                      using (var stream = new StreamReader(File.OpenRead("./StockPrices_Small.csv"))) {
+                          
+                          string line;
+                          while ((line = await stream.ReadLineAsync()) != null) {
+                              lines.Add(line);
+                          }
+                      }
+
+                      return lines;});
+
+                loadLinesTask.ContinueWith((task) => {
+                    Dispatcher.Invoke(() =>
+                    {
+                        Notes.Text = task.Exception.InnerException.Message;
+                    });
+                }, TaskContinuationOptions.OnlyOnFaulted);
 
                 var processStocksTask = loadLinesTask.ContinueWith((completedTask) => {
                     var lines = completedTask.Result;
@@ -54,7 +68,9 @@ namespace StockAnalyzer.Windows
                     {
                         Stocks.ItemsSource = data.Where(sp => sp.Identifier.ToLower() == StockIdentifier.Text.ToLower());
                     });
-                });
+                }, 
+                                        TaskContinuationOptions.OnlyOnRanToCompletion
+                );
 
                 processStocksTask.ContinueWith(_ => {
                     Dispatcher.Invoke(() => { AfterLoadingStockData(); });
