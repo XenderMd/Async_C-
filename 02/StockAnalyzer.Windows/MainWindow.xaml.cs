@@ -43,12 +43,24 @@ namespace StockAnalyzer.Windows
                 {
                     Notes.Text = "Cancellation requested";
                 });
+                
                 Search.Content = "Cancel";// Button text
+                
                 BeforeLoadingStockData();
 
                 var service = new StockService();
-                var data = await service.GetStockPricesFor(StockIdentifier.Text, cancellationTokenSource.Token);
-                Stocks.ItemsSource = data;
+
+                var loadingTasks = new List<Task<IEnumerable<StockPrice>>>();
+                var identifiers = StockIdentifier.Text.Split(',', ' ');
+                foreach(var indentifier in identifiers)
+                {
+                    var loadingTask = service.GetStockPricesFor(indentifier, cancellationTokenSource.Token);
+                    loadingTasks.Add(loadingTask);
+                }
+
+                var allStocks = await Task.WhenAll(loadingTasks);
+
+                Stocks.ItemsSource =allStocks.SelectMany(stockPriceEnumerable=>stockPriceEnumerable);
 
                 //Task<List<string>> loadLinesTask = SearchForStocks(cancellationTokenSource.Token);
 
