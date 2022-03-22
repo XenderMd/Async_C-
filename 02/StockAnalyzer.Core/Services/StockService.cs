@@ -42,4 +42,38 @@ namespace StockAnalyzer.Core.Services
             }
         }
     }
+
+    public class MockStockService : IStockService
+    {
+        public Task<IEnumerable<StockPrice>> GetStockPricesFor(string stockIdentifier, CancellationToken cancellationToken)
+        {
+            var stocks = new List<StockPrice>
+            {
+                new StockPrice {
+                    Identifier="MSFT",
+                    Change=0.5m,
+                    ChangePercent=0.75m
+                },
+                new StockPrice {
+                    Identifier="GOOGL",
+                    Change=0.5m,
+                    ChangePercent=0.75m
+                },
+                new StockPrice {
+                    Identifier="CAT",
+                    Change=0.5m,
+                    ChangePercent=0.75m
+                },
+                new StockPrice {
+                    Identifier="MSFT",
+                    Change=0.5m,
+                    ChangePercent=0.75m
+                }
+            };
+
+            var task = Task.FromResult(stocks.Where((stock)=>{ return stock.Identifier == stockIdentifier; }));
+            return task;
+
+        }
+    }
 }

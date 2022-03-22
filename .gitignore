@@ -7,3 +7,5 @@
 02/StockAnalyzer.Web/obj/
 *.suo
 02/.vs/StockAnalyzer/
+02/StockAnalyzer.Tests/StockAnalyzer.Tests/bin/
+02/StockAnalyzer.Tests/StockAnalyzer.Tests/obj/
