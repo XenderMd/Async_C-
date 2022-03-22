@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using StockAnalyzer.Core.Domain;
 using StockAnalyzer.Core.Services;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -58,9 +59,21 @@ namespace StockAnalyzer.Windows
                     loadingTasks.Add(loadingTask);
                 }
 
-                var allStocks = await Task.WhenAll(loadingTasks);
+                var timeoutTask = Task.Delay(2000);
 
-                Stocks.ItemsSource =allStocks.SelectMany(stockPriceEnumerable=>stockPriceEnumerable);
+                var allStocksLoadingTask = Task.WhenAll(loadingTasks);
+
+                var completedTask = await Task.WhenAny(timeoutTask, allStocksLoadingTask);
+
+                if (completedTask == timeoutTask)
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException("Timeout");
+                } else
+                {
+                    Stocks.ItemsSource = allStocksLoadingTask.Result.SelectMany(stockPriceEnumerable => stockPriceEnumerable);
+                    Notes.Text = "";
+                }
 
                 //Task<List<string>> loadLinesTask = SearchForStocks(cancellationTokenSource.Token);
 
