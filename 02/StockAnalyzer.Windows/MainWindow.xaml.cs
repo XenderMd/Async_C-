@@ -2,6 +2,7 @@
 using StockAnalyzer.Core.Domain;
 using StockAnalyzer.Core.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -53,13 +54,22 @@ namespace StockAnalyzer.Windows
 
                 var loadingTasks = new List<Task<IEnumerable<StockPrice>>>();
                 var identifiers = StockIdentifier.Text.Split(',', ' ');
-                foreach(var indentifier in identifiers)
+                var stocks = new ConcurrentBag<StockPrice>();
+                var timeoutTask = Task.Delay(12000);
+
+                foreach (var indentifier in identifiers)
                 {
                     var loadingTask = service.GetStockPricesFor(indentifier, cancellationTokenSource.Token);
+                    loadingTask = loadingTask.ContinueWith((t) => { 
+                        var aFewStocks = t.Result.Take(5);
+                        foreach (var stock in aFewStocks) {
+                            stocks.Add(stock);
+                        }
+                        Dispatcher.Invoke(() => {Stocks.ItemsSource = stocks.ToArray();});
+                        return aFewStocks;
+                    });
                     loadingTasks.Add(loadingTask);
                 }
-
-                var timeoutTask = Task.Delay(2000);
 
                 var allStocksLoadingTask = Task.WhenAll(loadingTasks);
 
@@ -69,11 +79,7 @@ namespace StockAnalyzer.Windows
                 {
                     cancellationTokenSource.Cancel();
                     throw new OperationCanceledException("Timeout");
-                } else
-                {
-                    Stocks.ItemsSource = allStocksLoadingTask.Result.SelectMany(stockPriceEnumerable => stockPriceEnumerable);
-                    Notes.Text = "";
-                }
+                };
 
                 //Task<List<string>> loadLinesTask = SearchForStocks(cancellationTokenSource.Token);
 
