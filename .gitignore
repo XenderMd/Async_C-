@@ -9,3 +9,7 @@
 02/.vs/StockAnalyzer/
 02/StockAnalyzer.Tests/StockAnalyzer.Tests/bin/
 02/StockAnalyzer.Tests/StockAnalyzer.Tests/obj/
+05/packages/
+05/StockAnalyzer.Core/obj/
+05/StockAnalyzer.Tests/obj/
+05/StockAnalyzer.Windows/obj/
