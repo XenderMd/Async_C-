@@ -2,9 +2,11 @@
 using StockAnalyzer.Core;
 using StockAnalyzer.Core.Domain;
 using StockAnalyzer.Core.Services;
+using StockAnalyzer.Windows.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -35,15 +37,27 @@ namespace StockAnalyzer.Windows
         {
             try
             {
-                var data = await GetStocksFor(StockIdentifier.Text);
-
-                Notes.Text = "Stocks loaded!";
-
+                BeforeLoadingStockData();
+                var identifiers = StockIdentifier.Text.Split("", ',');
+                var data = new ObservableCollection<StockPrice>();
                 Stocks.ItemsSource = data;
+
+                var service = new StockDiskStreamService();
+                var enumerator = service.GetAllStockPrices();
+
+                await foreach (var price in enumerator.WithCancellation(CancellationToken.None)) {
+                    if (identifiers.Contains(price.Identifier)){
+                        data.Add(price);
+                    }
+                }
             }
             catch(Exception ex)
             {
                 Notes.Text = ex.Message;
+            }
+            finally
+            {
+                AfterLoadingStockData();
             }
         }
 

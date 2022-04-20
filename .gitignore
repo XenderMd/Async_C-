@@ -13,3 +13,8 @@
 05/StockAnalyzer.Core/obj/
 05/StockAnalyzer.Tests/obj/
 05/StockAnalyzer.Windows/obj/
+05/StockAnalyzer.Web/bin/
+05/StockAnalyzer.Core/bin/
+05/StockAnalyzer.Windows.Core/bin/
+05/StockAnalyzer.Windows.Core/obj/
+05/StockAnalyzer.Web/obj/
